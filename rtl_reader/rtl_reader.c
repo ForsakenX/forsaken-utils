@@ -28,7 +28,7 @@ int parse_light( FILE * fp );
         else\
         {\
 		tab(tabs);\
-                printf(S": '%s'\n",T[s]);\
+                printf(S": '%s',\n",T[s]);\
         }
 
 #define getf( S ) \
