@@ -193,7 +193,7 @@ int parse_light( FILE * fp )
 			getf("stay_off_time");
 		
 		break;
-	case_LIGHT_FLICKERING:
+	case LIGHT_FLICKERING:
 		
 			getf("stay_on_chance");
 			getf("stay_off_chance");
@@ -201,7 +201,7 @@ int parse_light( FILE * fp )
 			getf("stay_off_time");
 		
 		break;
-	case_LIGHT_SPOT:
+	case LIGHT_SPOT:
 		
 			tputs("dir: {");
 			tabs++;
