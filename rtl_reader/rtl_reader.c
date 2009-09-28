@@ -105,7 +105,10 @@ int parse( char * file )
 		return 1;
 	}
 
+	puts("");
 	puts("--[[ lua table format ]]");
+	puts("");
+
 	printf("file = '%s',\n", file);
 	printf("description = 'real time lights',\n");
 
@@ -116,11 +119,15 @@ int parse( char * file )
 
 	for ( j = 0; j < number_of_lights; j++ )
 	{
-		puts("");
-		printf("--[[ light %d ]]\n", j );
+		printf("\n--[[ light %d ]]\n", j );
 		puts("{");
+
 		parse_light( fp );
-		puts("}");
+
+		if( j == number_of_lights-1 )
+			puts("}");
+		else
+			puts("},");
 	}
 
 	return 0;
@@ -187,7 +194,7 @@ int parse_light( FILE * fp )
 	gett("type", generation_types);
 	getf("delay");
 	tabs--;
-	tputs("}");
+	tputs("},");
 
 	tab(tabs);
 	printf("%s = {\n", light_types[light_type] );
@@ -228,7 +235,7 @@ int parse_light( FILE * fp )
 			getf("y");
 			getf("z");
 			tabs--;
-			tputs("}");
+			tputs("},");
 
 			tputs("up = {");
 			tabs++;
@@ -236,7 +243,7 @@ int parse_light( FILE * fp )
 			getf("y");
 			getf("z");
 			tabs--;
-			tputs("}");
+			tputs("},");
 
 			getf("cone");
 			getf("rotation_period");
