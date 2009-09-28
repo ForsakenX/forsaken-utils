@@ -9,7 +9,9 @@ int parse( char * file );
 int parse_light( FILE * fp );
 void tab( int count );
 
-#define get( V, S ) \
+int tabs = 0;
+
+#define GET( V, S ) \
 	if ( fread( &(V), sizeof( V ), 1, fp ) != 1 ) \
 	{\
 		printf("Error reading " #V " from file\n");\
@@ -20,7 +22,7 @@ void tab( int count );
 		printf(S"\n",V);\
 	}
 
-#define gett( S, T ) \
+#define GETT( S, T ) \
         if ( fread( &(s), sizeof( uint16 ), 1, fp ) != 1 ) \
         {\
                 printf("Error reading " S " from file\n");\
@@ -32,7 +34,7 @@ void tab( int count );
                 printf(S" = '%s',\n",T[s]);\
         }
 
-#define getf( S ) \
+#define GETF( S ) \
         if ( fread( &(f), sizeof( float ), 1, fp ) != 1 ) \
         {\
                 printf("Error reading " S " from file\n");\
@@ -41,10 +43,10 @@ void tab( int count );
         else\
         {\
 		tab(tabs);\
-                printf(S" = %f,\n",f);\
+                printf(S" = %g,\n",f);\
         }
 
-#define gets( S ) \
+#define GETS( S ) \
         if ( fread( &(s), sizeof( uint16 ), 1, fp ) != 1 ) \
         {\
                 printf("Error reading " S " from file\n");\
@@ -56,7 +58,7 @@ void tab( int count );
                 printf(S" = %d,\n",s);\
         }
 
-#define getb( S ) \
+#define GETB( S ) \
         if ( fread( &(b), sizeof( uint32 ), 1, fp ) != 1 ) \
         {\
                 printf("Error reading " S " from file\n");\
@@ -68,10 +70,20 @@ void tab( int count );
                 printf(S" = %d,\n",b);\
         }
 
-#define tputs( S ) \
+#define OPEN( S ) \
+	tab(tabs);\
+	if(S) puts(#S" = {");\
+	else  puts("{");\
+	tabs++;
+
+#define CLOSE() \
+	tabs--;\
+	tab(tabs);\
+	puts("},");
+
+#define TPUTS( S ) \
 	tab(tabs);\
 	printf(S"\n");
-
 
 int main (int argc, char** argv) 
 {
@@ -93,7 +105,7 @@ void tab( int count )
 int parse( char * file )
 {
 	FILE 	* fp;
-	int	j, tabs, number_of_lights;
+	int	j, number_of_lights;
 	char	MagicNumber[4];
 	uint16  s;
 	uint32 	b;
@@ -101,7 +113,7 @@ int parse( char * file )
 	fp = fopen( file, "rb" );
 	if(!fp)
 	{
-		printf("failed to open file!\n");
+		printf("failed to OPEN file!\n");
 		return 1;
 	}
 
@@ -112,22 +124,17 @@ int parse( char * file )
 	printf("file = '%s',\n", file);
 	printf("description = 'real time lights',\n");
 
-	get( MagicNumber, "magic_number = '%.4s'," );
-	getb("version_number");
-	gets("total_lights");
+	GET( MagicNumber, "magic_number = '%.4s'," );
+	GETB("version_number");
+	GETS("total_lights");
 	number_of_lights = s;
 
 	for ( j = 0; j < number_of_lights; j++ )
 	{
 		printf("\n--[[ light %d ]]\n", j );
-		puts("{");
-
+		OPEN(NULL);
 		parse_light( fp );
-
-		if( j == number_of_lights-1 )
-			puts("}");
-		else
-			puts("},");
+		CLOSE();
 	}
 
 	return 0;
@@ -175,84 +182,74 @@ int parse_light( FILE * fp )
 {
 	uint16	s, light_type;
 	float	f;
-	int	tabs = 1;
 
-	gett("type", light_types);
+	GETT("type", light_types);
 	light_type = s;
 
-	gets("group");
-	getf("x");
-	getf("y");
-	getf("z");
-	getf("range");
-	getf("r");
-	getf("g");
-	getf("b");
+	GETS("group");
+	GETF("x");
+	GETF("y");
+	GETF("z");
+	GETF("range");
+	GETF("r");
+	GETF("g");
+	GETF("b");
 
-	tputs("generation = {");
-	tabs++;
-	gett("type", generation_types);
-	getf("delay");
-	tabs--;
-	tputs("},");
+	OPEN("generation");
+	GETT("type", generation_types);
+	GETF("delay");
+	CLOSE();
 
-	tab(tabs);
-	printf("%s = {\n", light_types[light_type] );
-	tabs++;
+	OPEN(light_types[light_type]);
 
 	switch ( light_type )
 	{
 	case LIGHT_FIXED:
 		
-			gett("on_type", pulse_types);
-			gett("off_type", pulse_types);
-			gets("on_time");
-			gets("off_time");
+			GETT("on_type", pulse_types);
+			GETT("off_type", pulse_types);
+			GETS("on_time");
+			GETS("off_time");
 	
 		break;
 	case LIGHT_PULSING:
 		
-			gett("type", pulse_types);
-			getf("on_time");
-			getf("stay_on_time");
-			getf("off_time");
-			getf("stay_off_time");
+			GETT("type", pulse_types);
+			GETF("on_time");
+			GETF("stay_on_time");
+			GETF("off_time");
+			GETF("stay_off_time");
 		
 		break;
 	case LIGHT_FLICKERING:
 		
-			getf("stay_on_chance");
-			getf("stay_off_chance");
-			getf("stay_on_time");
-			getf("stay_off_time");
+			GETF("stay_on_chance");
+			GETF("stay_off_chance");
+			GETF("stay_on_time");
+			GETF("stay_off_time");
 		
 		break;
 	case LIGHT_SPOT:
-		
-			tputs("dir = {");
-			tabs++;
-			getf("x");
-			getf("y");
-			getf("z");
-			tabs--;
-			tputs("},");
+	
+			OPEN("dir");	
+			GETF("x");
+			GETF("y");
+			GETF("z");
+			CLOSE();
 
-			tputs("up = {");
-			tabs++;
-			getf("x");
-			getf("y");
-			getf("z");
-			tabs--;
-			tputs("},");
+			OPEN("up");
+			GETF("x");
+			GETF("y");
+			GETF("z");
+			CLOSE();
 
-			getf("cone");
-			getf("rotation_period");
+			GETF("cone");
+			GETF("rotation_period");
 		
 		break;
 	}
 
-	tabs--;
-	tputs("}");
+	CLOSE();
 
 	return;
 }
