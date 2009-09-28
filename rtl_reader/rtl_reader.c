@@ -5,7 +5,7 @@
 typedef unsigned int uint32;
 typedef unsigned short uint16;
 
-int parse( FILE * fp );
+int parse( char * file );
 int parse_light( FILE * fp );
 
 #define get( V, S ) \
@@ -19,45 +19,89 @@ int parse_light( FILE * fp );
 		printf(S"\n",V);\
 	}
 
-#define gett( V, S, T ) \
-        if ( fread( &(V), sizeof( V ), 1, fp ) != 1 ) \
+#define gett( S, T ) \
+        if ( fread( &(s), sizeof( uint16 ), 1, fp ) != 1 ) \
         {\
-                printf("Error reading " #V " from file\n");\
+                printf("Error reading " S " from file\n");\
                 return 1;\
         }\
         else\
         {\
-                printf(S"\n",T[V]);\
+		tab(tabs);\
+                printf(S": '%s'\n",T[s]);\
         }
+
+#define getf( S ) \
+        if ( fread( &(f), sizeof( float ), 1, fp ) != 1 ) \
+        {\
+                printf("Error reading " S " from file\n");\
+                return 1;\
+        }\
+        else\
+        {\
+		tab(tabs);\
+                printf(S": %f,\n",f);\
+        }
+
+#define gets( S ) \
+        if ( fread( &(s), sizeof( uint16 ), 1, fp ) != 1 ) \
+        {\
+                printf("Error reading " S " from file\n");\
+                return 1;\
+        }\
+        else\
+        {\
+		tab(tabs);\
+                printf(S": %d,\n",s);\
+        }
+
+#define tputs( S ) \
+	tab(tabs);\
+	printf(S"\n");
+
 
 int main (int argc, char** argv) 
 {
-	FILE * fp;
-	printf("parsing file: %s\n", argv[1]);
-	fp = fopen( argv[1], "rb" );
-	if(!fp)
-	{
-		printf("failed to open file!\n");
-		return 1;
-	}
-	return parse( fp );
+	return parse( argv[1] );
 }
 
-int parse( FILE * fp )
+void tab( int count )
 {
+	int x;
+	for( x = 0; x < count; x++ )
+		printf("\t");
+}
+
+int parse( char * file )
+{
+	FILE 	* fp;
+
 	int	j;
 	char	MagicNumber[4];
 	uint32	VersionNumber;
 	uint16 	number_of_lights;
 
-	get( MagicNumber, "magic number = %.4s" );
-	get( VersionNumber, "version number = %d" );
-	get( number_of_lights, "there are %d lights in the file" );
+	fp = fopen( file, "rb" );
+	if(!fp)
+	{
+		printf("failed to open file!\n");
+		return 1;
+	}
+
+	puts("--[[");
+	printf("parsed file: %s\n", file);
+	get( MagicNumber, " magic number = %.4s" );
+	get( VersionNumber, " version number = %d" );
+	get( number_of_lights, " there are %d lights in the file" );
+	puts("--]]");
 
 	for ( j = 0; j < number_of_lights; j++ )
 	{
-		printf( "\nparsing light %d\n", j );
+		puts("");
+		printf("--[[ light %d ]]\n", j );
+		puts("{");
 		parse_light( fp );
+		puts("}");
 	}
 
 	return 0;
@@ -103,65 +147,86 @@ char * pulse_types[] =
 
 int parse_light( FILE * fp )
 {
-	uint16	light_type, type, group, generation_type;
-	float	x,y,z, range, r,g,b, delay, time, now_time;
+	uint16	s, light_type;
+	float	f;
+	int	tabs = 1;
 
-	gett( light_type, "type: %s", light_types );
-	get( group, "group %d" );
-	get( x, "x %f" );
-	get( y, "y %f" );
-	get( z, "z %f" );
-	get( range, "range %f" );
-	get( r, "r %f" );
-	get( g, "g %f" );
-	get( b, "b %f" );
-	gett( generation_type, "generation type %s", generation_types );
-	get( delay, "generation delay %f" );
+	gett("type", light_types);
+	light_type = s;
+
+	gets("group");
+	getf("x");
+	getf("y");
+	getf("z");
+	getf("range");
+	getf("r");
+	getf("g");
+	getf("b");
+
+	tputs("generation: {");
+	tabs++;
+	gett("type", generation_types);
+	getf("delay");
+	tabs--;
+	tputs("}");
+
+	tab(tabs);
+	printf("%s: {\n", light_types[light_type] );
+	tabs++;
 
 	switch ( light_type )
 	{
 	case LIGHT_FIXED:
-		{
-			float time;
-			gett( type, "fixed on type %s", pulse_types );
-			gett( type, "fixed off type %s", pulse_types );
-			get( time, "fixed on time" );
-			get( time, "fixed off time" );
-		}
+		
+			gett("on_type", pulse_types);
+			gett("off_type", pulse_types);
+			gets("on_time");
+			gets("off_time");
+	
 		break;
 	case LIGHT_PULSING:
-		{
-			float on_time, stay_on_time, off_time, stay_off_time;
-			gett( type, "pulsing type %s", pulse_types );
-			get( on_time, "pulsing on time %f" ); 
-			get( stay_on_time, "pulsing stay on time %f" ); 
-			get( off_time, "pulsing off time %f" ); 
-			get( stay_off_time, "pulsing stay off time %f" ); 
-		}
+		
+			gett("type", pulse_types);
+			getf("on_time");
+			getf("stay_on_time");
+			getf("off_time");
+			getf("stay_off_time");
+		
 		break;
-	case LIGHT_FLICKERING:
-		{
-			float stay_on_chance, stay_off_chance, stay_on_time, stay_off_time;
-			get( stay_on_chance, "flickering stay_on_chance %f" );
-			get( stay_off_chance, "flickering stay_off_chance %f" );
-			get( stay_on_time, "flickering stay_on_time %f" );
-			get( stay_off_time, "flickering stay_off_time %f" );
-		}
+	case_LIGHT_FLICKERING:
+		
+			getf("stay_on_chance");
+			getf("stay_off_chance");
+			getf("stay_on_time");
+			getf("stay_off_time");
+		
 		break;
-	case LIGHT_SPOT:
-		{
-			float x,y,z, cone, rotation_period;
-			get( x, "spot dir.x %f" );
-			get( y, "spot dir.y %f" );
-			get( z, "spot dir.z %f" );
-			get( x, "spot up.x %f" );
-			get( y, "spot up.y %f" );
-			get( z, "spot up.z %f" );
-			get( cone, "spot cone %f" );
-			get( rotation_period, "spot rotation period %f");
-		}
+	case_LIGHT_SPOT:
+		
+			tputs("dir: {");
+			tabs++;
+			getf("x");
+			getf("y");
+			getf("z");
+			tabs--;
+			tputs("}");
+
+			tputs("up: {");
+			tabs++;
+			getf("x");
+			getf("y");
+			getf("z");
+			tabs--;
+			tputs("}");
+
+			getf("cone");
+			getf("rotation_period");
+		
 		break;
 	}
+
+	tabs--;
+	tputs("}");
 
 	return;
 }
