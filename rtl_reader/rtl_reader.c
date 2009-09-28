@@ -77,7 +77,7 @@ int tabs = 0;
 
 #define OPEN( S ) \
 	tab(tabs);\
-	printf("%s = {",S);\
+	printf("%s = {\n",S);\
 	tabs++;
 
 #define CLOSE() \
