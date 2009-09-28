@@ -72,7 +72,7 @@ int tabs = 0;
 
 #define OPEN( S ) \
 	tab(tabs);\
-	if(S) puts(#S" = {");\
+	if(S) printf("%s = {",S);\
 	else  puts("{");\
 	tabs++;
 
