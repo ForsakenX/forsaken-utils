@@ -70,10 +70,14 @@ int tabs = 0;
                 printf(S" = %d,\n",b);\
         }
 
+#define OPENN( S ) \
+	tab(tabs);\
+	puts("{");\
+	tabs++;
+
 #define OPEN( S ) \
 	tab(tabs);\
-	if(S) printf("%s = {",S);\
-	else  puts("{");\
+	printf("%s = {",S);\
 	tabs++;
 
 #define CLOSE() \
@@ -113,7 +117,7 @@ int parse( char * file )
 	fp = fopen( file, "rb" );
 	if(!fp)
 	{
-		printf("failed to OPEN file!\n");
+		printf("failed to open file!\n");
 		return 1;
 	}
 
@@ -132,7 +136,7 @@ int parse( char * file )
 	for ( j = 0; j < number_of_lights; j++ )
 	{
 		printf("\n--[[ light %d ]]\n", j );
-		OPEN(NULL);
+		OPENN();
 		parse_light( fp );
 		CLOSE();
 	}
