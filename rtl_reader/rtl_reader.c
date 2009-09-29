@@ -255,5 +255,5 @@ int parse_light( FILE * fp )
 
 	CLOSE();
 
-	return;
+	return 0;
 }
